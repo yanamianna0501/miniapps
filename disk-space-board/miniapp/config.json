@@ -1,0 +1,18 @@
+{
+  "sources": [
+    {
+      "id": "example-elev",
+      "label": "示例：提权扫描清单",
+      "file": "scan/example-elev.csv",
+      "note": "示例配置：把 file 改成你自己的扫描清单路径（相对工作区根目录）。提权扫描含无权限的系统区域。"
+    },
+    {
+      "id": "example-plain",
+      "label": "示例：普通权限扫描清单",
+      "file": "scan/example-plain.csv",
+      "note": "示例配置：未提权的扫描会跳过无权限目录与目录联接，统计口径与上一份略有差异。"
+    }
+  ],
+  "defaultSourceId": "example-elev",
+  "rescanRoot": "C:\\"
+}

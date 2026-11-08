@@ -1,0 +1,17 @@
+# 依赖
+node_modules/
+
+# 构建产物（打包好的 miniapp zip，不入库）
+release/*.zip
+**/release/*.zip
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# 日志
+*.log
+
+# 操作系统/编辑器产物
+.DS_Store
+Thumbs.db

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "name": "codex-subscription-board",
+  "displayName": "Codex 订阅总览",
+  "version": "1.0.0",
+  "description": "把 ChatGPT / Codex 订阅的额度窗口、重置倒计时与模型目录放在一页里，并在本地累积每日用量趋势。",
+  "author": "yanamianna0501",
+  "icon": "icon.png",
+  "category": "Other",
+  "exampleQueries": [
+    "打开 Codex 订阅总览看看这个星期的额度还剩多少。",
+    "查一下我的账号能用哪些模型，上下文各有多大。"
+  ],
+  "apps": [],
+  "mcpServers": [],
+  "skills": []
+}

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "name": "context-dashboard",
+  "displayName": "上下文仪表盘",
+  "version": "1.1.0",
+  "description": "读取本机 MiniMax Code 运行时用量库，展示所选范围内的会话数、输入/输出 token、缓存读取与缓存命中率、每日用量、8 周活动热力图；并从每次调用的上下文遥测里呈现上下文占用压力、6 类上下文构成（系统提示/记忆/工具/技能/消息/其他）、上下文增长曲线与模型统计，可下钻到单个会话的逐次模型调用明细并导出 CSV。参考 DSH 插件 dsh-context 的上下文仪表盘复刻，只读，不做任何写入。",
+  "author": "yanamianna0501",
+  "icon": "icon.png",
+  "category": "Other",
+  "exampleQueries": [
+    "打开上下文仪表盘",
+    "我的上下文占用和缓存命中率是多少",
+    "看看最近 7 天的 token 用量",
+    "各模型的上下文占用是多少",
+    "哪个会话最耗 token"
+  ],
+  "apps": [],
+  "mcpServers": [],
+  "skills": []
+}

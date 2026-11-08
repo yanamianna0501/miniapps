@@ -1,0 +1,1508 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="auto">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>C 盘空间看板</title>
+    <style>
+      :root,
+      [data-theme='light'] {
+        --mcode-bg: #ffffff;
+        --mcode-bg-secondary: #f5f5f5;
+        --mcode-surface: #ffffff;
+        --mcode-surface-muted: #fafafa;
+        --mcode-text: #171717;
+        --mcode-text-muted: #666666;
+        --mcode-text-subtle: #adadad;
+        --mcode-border: #0a0a0a14;
+        --mcode-border-strong: #0a0a0af2;
+        --mcode-accent: #0094fc;
+        --mcode-success: #04b54b;
+        --mcode-warning: #f56811;
+        --mcode-danger: #f73646;
+        --mcode-primary-action-bg: #171717;
+        --mcode-primary-action-text: #ffffff;
+      }
+      [data-theme='dark'] {
+        --mcode-bg: #171717;
+        --mcode-bg-secondary: #1c1c1c;
+        --mcode-surface: #262626;
+        --mcode-surface-muted: #262626;
+        --mcode-text: #ededed;
+        --mcode-text-muted: #949494;
+        --mcode-text-subtle: #666666;
+        --mcode-border: #ffffff14;
+        --mcode-border-strong: #fffffff2;
+        --mcode-accent: #0077d9;
+        --mcode-success: #009c3d;
+        --mcode-warning: #e25507;
+        --mcode-danger: #e31937;
+        --mcode-primary-action-bg: #ffffff;
+        --mcode-primary-action-text: #171717;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--mcode-bg);
+        color: var(--mcode-text);
+        font-family: ui-sans-serif, -apple-system, system-ui, 'Segoe UI', 'Microsoft YaHei', Helvetica, Arial, sans-serif;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+      .mono {
+        font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 12px;
+      }
+      main {
+        max-width: 1320px;
+        margin: 0 auto;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+      h1 {
+        font-size: 18px;
+        line-height: 28px;
+        font-weight: 600;
+        margin: 0;
+      }
+      h2 {
+        font-size: 16px;
+        line-height: 24px;
+        font-weight: 500;
+        margin: 0;
+      }
+      h3,
+      h4 {
+        font-size: 14px;
+        margin: 0;
+        font-weight: 500;
+      }
+      p {
+        margin: 0;
+      }
+
+      .page-head {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+        justify-content: space-between;
+        flex-wrap: wrap;
+      }
+      .sub {
+        color: var(--mcode-text-muted);
+        font-size: 13px;
+        max-width: 76ch;
+        margin-top: 4px;
+      }
+      .head-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      button,
+      select,
+      input {
+        font: inherit;
+        color: var(--mcode-text);
+      }
+      .btn,
+      select,
+      input[type='text'],
+      input[type='search'] {
+        height: 36px;
+        border: 1px solid var(--mcode-border);
+        border-radius: 8px;
+        background: var(--mcode-surface);
+        padding: 0 10px;
+      }
+      .btn {
+        cursor: pointer;
+        background: var(--mcode-surface-muted);
+        transition: background 150ms ease-out, border-color 150ms ease-out;
+      }
+      .btn:hover {
+        border-color: var(--mcode-border-strong);
+      }
+      .btn:focus-visible,
+      select:focus-visible,
+      input:focus-visible,
+      summary:focus-visible {
+        outline: 2px solid var(--mcode-accent);
+        outline-offset: 1px;
+      }
+      .btn-primary {
+        background: var(--mcode-primary-action-bg);
+        color: var(--mcode-primary-action-text);
+        border-color: var(--mcode-primary-action-bg);
+      }
+      .btn-danger {
+        color: var(--mcode-danger);
+      }
+      .btn[disabled] {
+        color: var(--mcode-text-subtle);
+        cursor: not-allowed;
+      }
+      .btn-sm {
+        height: 28px;
+        padding: 0 8px;
+        font-size: 12px;
+        border-radius: 8px;
+      }
+
+      .kpis {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+      }
+      .kpi {
+        border: 1px solid var(--mcode-border);
+        border-radius: 12px;
+        padding: 16px;
+        background: var(--mcode-surface);
+      }
+      .kpi .label {
+        color: var(--mcode-text-muted);
+        font-size: 12px;
+      }
+      .kpi .value {
+        font-size: 24px;
+        font-weight: 600;
+        line-height: 32px;
+        margin-top: 4px;
+        font-variant-numeric: tabular-nums;
+      }
+      .kpi .meta {
+        color: var(--mcode-text-muted);
+        font-size: 12px;
+      }
+      .kpi.is-clean .value {
+        color: var(--mcode-success);
+      }
+      .kpi.is-migrate .value {
+        color: var(--mcode-accent);
+      }
+
+      .panel {
+        border: 1px solid var(--mcode-border);
+        border-radius: 12px;
+        padding: 16px 20px 20px;
+        background: var(--mcode-surface);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .hint {
+        color: var(--mcode-text-muted);
+        font-size: 12px;
+      }
+
+      .grid-2 {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+        gap: 24px;
+        align-items: start;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      caption {
+        text-align: left;
+        color: var(--mcode-text-muted);
+        font-size: 12px;
+        padding-bottom: 8px;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 6px 10px;
+        border-bottom: 1px solid var(--mcode-border);
+        vertical-align: top;
+      }
+      th {
+        color: var(--mcode-text-muted);
+        font-weight: 400;
+        font-size: 12px;
+        white-space: nowrap;
+      }
+      tbody tr:hover {
+        background: var(--mcode-surface-muted);
+      }
+      td.num,
+      th.num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      .cell-path {
+        max-width: 340px;
+        overflow-wrap: anywhere;
+        color: var(--mcode-text-muted);
+      }
+      .cell-name {
+        font-weight: 500;
+      }
+      .cell-note {
+        color: var(--mcode-text-muted);
+        font-size: 12px;
+        margin-top: 2px;
+        max-width: 46ch;
+      }
+
+      .badge {
+        display: inline-block;
+        border: 1px solid var(--mcode-border);
+        border-radius: 999px;
+        padding: 0 8px;
+        font-size: 12px;
+        color: var(--mcode-text-muted);
+        white-space: nowrap;
+      }
+      .badge-ok {
+        color: var(--mcode-success);
+        border-color: color-mix(in srgb, var(--mcode-success) 40%, transparent);
+      }
+      .badge-warn {
+        color: var(--mcode-warning);
+        border-color: color-mix(in srgb, var(--mcode-warning) 40%, transparent);
+      }
+      .badge-danger {
+        color: var(--mcode-danger);
+        border-color: color-mix(in srgb, var(--mcode-danger) 40%, transparent);
+      }
+      .badge-accent {
+        color: var(--mcode-accent);
+        border-color: color-mix(in srgb, var(--mcode-accent) 40%, transparent);
+      }
+
+      details.tier {
+        border: 1px solid var(--mcode-border);
+        border-radius: 12px;
+        padding: 12px 16px;
+        background: var(--mcode-surface);
+      }
+      details.tier + details.tier {
+        margin-top: 12px;
+      }
+      details.tier > summary {
+        cursor: pointer;
+        list-style: none;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      details.tier > summary::-webkit-details-marker {
+        display: none;
+      }
+      details.tier > summary::before {
+        content: '';
+        width: 0;
+        height: 0;
+        border-left: 5px solid var(--mcode-text-muted);
+        border-top: 4px solid transparent;
+        border-bottom: 4px solid transparent;
+        transition: transform 200ms ease-out;
+      }
+      details.tier[open] > summary::before {
+        transform: rotate(90deg);
+      }
+      .tier-title {
+        font-weight: 500;
+      }
+      .tier-figures {
+        color: var(--mcode-text-muted);
+        font-size: 12px;
+        margin-left: auto;
+      }
+      .tier-figures b {
+        color: var(--mcode-text);
+        font-variant-numeric: tabular-nums;
+      }
+      .tier-note {
+        color: var(--mcode-text-muted);
+        font-size: 12px;
+        margin-top: 6px;
+      }
+      details.tier > .table-wrap {
+        margin-top: 10px;
+      }
+
+      .crumbs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        align-items: center;
+        font-size: 12px;
+      }
+      .crumb-btn {
+        border: 1px solid var(--mcode-border);
+        background: var(--mcode-surface-muted);
+        border-radius: 8px;
+        padding: 2px 8px;
+        cursor: pointer;
+      }
+      .crumb-sep {
+        color: var(--mcode-text-subtle);
+      }
+
+      .bar-row {
+        display: grid;
+        grid-template-columns: 88px 1fr 96px;
+        align-items: center;
+        gap: 10px;
+        font-size: 12px;
+      }
+      .bar {
+        height: 8px;
+        background: var(--mcode-bg-secondary);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .bar > span {
+        display: block;
+        height: 100%;
+        background: var(--mcode-accent);
+      }
+
+      .banner {
+        border: 1px solid var(--mcode-border);
+        border-radius: 12px;
+        padding: 12px 16px;
+        font-size: 13px;
+        background: var(--mcode-surface-muted);
+      }
+      .banner[role='alert'] {
+        border-color: color-mix(in srgb, var(--mcode-danger) 40%, transparent);
+        color: var(--mcode-danger);
+      }
+      .banner[role='status'] {
+        color: var(--mcode-text-muted);
+      }
+
+      .progress {
+        height: 8px;
+        background: var(--mcode-bg-secondary);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .progress > span {
+        display: block;
+        height: 100%;
+        width: 30%;
+        background: var(--mcode-accent);
+        animation: slide 1.4s ease-out infinite;
+      }
+      @keyframes slide {
+        0% {
+          transform: translateX(-100%);
+        }
+        100% {
+          transform: translateX(340%);
+        }
+      }
+
+      .toolbar {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .stack {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .row-actions {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .note-input {
+        width: 100%;
+        min-width: 160px;
+      }
+      .empty {
+        color: var(--mcode-text-subtle);
+        font-size: 13px;
+        padding: 8px 0;
+      }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        [data-theme='auto'] {
+          --mcode-bg: #171717;
+          --mcode-bg-secondary: #1c1c1c;
+          --mcode-surface: #262626;
+          --mcode-surface-muted: #262626;
+          --mcode-text: #ededed;
+          --mcode-text-muted: #949494;
+          --mcode-text-subtle: #666666;
+          --mcode-border: #ffffff14;
+          --mcode-border-strong: #fffffff2;
+          --mcode-accent: #0077d9;
+          --mcode-success: #009c3d;
+          --mcode-warning: #e25507;
+          --mcode-danger: #e31937;
+          --mcode-primary-action-bg: #ffffff;
+          --mcode-primary-action-text: #171717;
+        }
+      }
+      @media (max-width: 960px) {
+        .kpis {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .grid-2 {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+      @media (max-width: 768px) {
+        main {
+          padding: 16px;
+        }
+        .kpis {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header class="page-head">
+        <div>
+          <h1>C 盘空间看板</h1>
+          <p class="sub">
+            按《C 盘腾盘方案》的 T1–M3 分档查看 2026-10-03 的扫描清单，把「打算怎么处理」逐项记下来并汇总可释放空间。
+            这个看板只记录决策，<strong>不会删除、移动或改名任何文件</strong>。
+          </p>
+        </div>
+        <div class="head-actions">
+          <label for="snapshotSelect" class="hint">当前快照</label>
+          <select id="snapshotSelect" aria-label="选择扫描清单快照"></select>
+          <button class="btn" id="reloadBtn" type="button">重新读取</button>
+          <button class="btn btn-primary" id="rescanBtn" type="button">重新扫描</button>
+        </div>
+      </header>
+
+      <div id="statusArea" class="banner" role="status" aria-live="polite">正在读取扫描清单…</div>
+
+      <section class="kpis" id="kpis" aria-label="关键指标"></section>
+
+      <section class="panel" id="rescanPanel" hidden aria-labelledby="rescanTitle">
+        <div class="panel-head">
+          <h2 id="rescanTitle">重新扫描</h2>
+          <button class="btn btn-sm" id="cancelRescanBtn" type="button">取消扫描</button>
+        </div>
+        <div class="progress" aria-hidden="true"><span></span></div>
+        <p class="hint" id="rescanDetail"></p>
+        <p class="hint">
+          只读取文件名、大小和修改时间，不打开文件内容；跳过目录联接与无权限目录。上次同类扫描约 15 秒完成，
+          本次在 Node 里逐文件取属性，预计 1–2 分钟。
+        </p>
+      </section>
+
+      <section class="panel" aria-labelledby="tierTitle">
+        <div class="panel-head">
+          <h2 id="tierTitle">分档总览</h2>
+          <p class="hint" id="tierHint"></p>
+        </div>
+        <div id="tierList" class="stack"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="browseTitle">
+        <div class="panel-head">
+          <h2 id="browseTitle">未归类空间与目录下钻</h2>
+          <p class="hint">方案未归类到的部分，按目录自行下钻；带档位标签的目录表示它整体已在某个档位条目内。</p>
+        </div>
+        <div class="grid-2">
+          <div class="stack">
+            <div id="unclassifiedBox"></div>
+            <div class="table-wrap">
+              <table id="unclassifiedTable">
+                <caption>未归类空间最大的目录</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">目录</th>
+                    <th scope="col" class="num">体积</th>
+                    <th scope="col" class="num">文件数</th>
+                    <th scope="col">操作</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="stack">
+            <nav class="crumbs" id="crumbs" aria-label="目录路径"></nav>
+            <div class="table-wrap">
+              <table id="treeTable">
+                <caption id="treeCaption">目录内容</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">子目录</th>
+                    <th scope="col" class="num">体积</th>
+                    <th scope="col" class="num">文件数</th>
+                    <th scope="col">归属</th>
+                    <th scope="col">处置</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="table-wrap">
+              <table id="dirTopTable">
+                <caption>该目录下最大的文件</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">文件</th>
+                    <th scope="col" class="num">体积</th>
+                    <th scope="col">处置</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="row-actions">
+              <button class="btn btn-sm" id="loadDirFilesBtn" type="button">加载该目录全部文件</button>
+              <span class="hint" id="dirFilesHint"></span>
+            </div>
+            <div class="table-wrap" id="dirFilesArea"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="topTitle">
+        <div class="panel-head">
+          <h2 id="topTitle">全盘最大的文件</h2>
+          <p class="hint">来自当前快照，与档位无关，便于发现方案未覆盖的大文件。</p>
+        </div>
+        <div class="table-wrap">
+          <table id="topFilesTable">
+            <caption class="sr-only">全盘最大的文件前 120 名</caption>
+            <thead>
+              <tr>
+                <th scope="col">路径</th>
+                <th scope="col">扩展名</th>
+                <th scope="col" class="num">体积</th>
+                <th scope="col">修改时间</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="extTitle">
+        <div class="panel-head">
+          <h2 id="extTitle">扩展名分布</h2>
+          <p class="hint">按体积排列的前 40 类文件。</p>
+        </div>
+        <div id="extList" class="stack"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="searchTitle">
+        <div class="panel-head">
+          <h2 id="searchTitle">全量路径搜索</h2>
+          <p class="hint">在整个清单里按路径片段搜索，每次全量扫一遍约 2–5 秒。</p>
+        </div>
+        <div class="toolbar">
+          <label class="sr-only" for="searchInput">搜索路径</label>
+          <input id="searchInput" type="search" placeholder="例如 node_modules、AppData\\Local" style="min-width: 280px" />
+          <button class="btn" id="searchBtn" type="button">搜索</button>
+          <span class="hint" id="searchHint"></span>
+        </div>
+        <div class="table-wrap" id="searchArea"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="decisionTitle">
+        <div class="panel-head">
+          <h2 id="decisionTitle">决策清单</h2>
+          <div class="row-actions">
+            <button class="btn btn-sm" id="exportBtn" type="button">导出 CSV</button>
+            <button class="btn btn-sm btn-danger" id="clearBtn" type="button">清空全部决策</button>
+          </div>
+        </div>
+        <p class="hint">
+          汇总规则：同一动作下，位于已计入条目内部的子条目不会重复累加；父条目内部的「保留不动」或另一种动作会从父条目中扣掉。
+          「微信 / QQ 记录」这类条目按名称匹配，无法参与自动扣除。
+        </p>
+        <div class="table-wrap">
+          <table id="decisionTable">
+            <caption class="sr-only">已记录的处置决策</caption>
+            <thead>
+              <tr>
+                <th scope="col">目标</th>
+                <th scope="col">层级</th>
+                <th scope="col">档位</th>
+                <th scope="col">处置</th>
+                <th scope="col" class="num">体积</th>
+                <th scope="col">备注</th>
+                <th scope="col">操作</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div id="decisionEmpty" class="empty">还没有任何决策。在上面的分档条目或目录里选择处置动作即可。</div>
+      </section>
+
+      <section class="panel" aria-labelledby="snapshotTitle">
+        <div class="panel-head">
+          <h2 id="snapshotTitle">快照</h2>
+          <p class="hint">看板自己生成的快照可以在这里删除；工作区里的扫描清单不会被修改。</p>
+        </div>
+        <div class="table-wrap">
+          <table id="snapshotTable">
+            <caption class="sr-only">可用的扫描清单快照</caption>
+            <thead>
+              <tr>
+                <th scope="col">名称</th>
+                <th scope="col">来源</th>
+                <th scope="col" class="num">行数</th>
+                <th scope="col" class="num">大小</th>
+                <th scope="col">时间</th>
+                <th scope="col">操作</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      (function () {
+        'use strict';
+
+        var ACTIONS = [
+          { value: 'clean', label: '清理' },
+          { value: 'migrate', label: '迁移' },
+          { value: 'keep', label: '保留不动' },
+          { value: 'later', label: '待定' }
+        ];
+        var ACTION_LABEL = { clean: '清理', migrate: '迁移', keep: '保留不动', later: '待定' };
+
+        var app = {
+          data: null,
+          tree: null,
+          treePath: 'C:\\',
+          dirFiles: null,
+          search: null,
+          rescanTimer: null,
+          pollTimer: null
+        };
+        var metaByKey = new Map();
+        var decisionByKey = new Map();
+
+        var el = function (id) { return document.getElementById(id); };
+
+        function esc(value) {
+          return String(value === null || value === undefined ? '' : value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+        }
+        function fmtGB(value) {
+          if (value === null || value === undefined) return '—';
+          if (value === 0) return '0 GB';
+          if (value < 0.005) return '< 0.01 GB';
+          return value.toFixed(2) + ' GB';
+        }
+        function fmtNum(value) {
+          if (value === null || value === undefined) return '—';
+          return Number(value).toLocaleString('zh-CN');
+        }
+        function fmtMB(value) {
+          if (value === null || value === undefined) return '—';
+          if (value >= 1024) return (value / 1024).toFixed(2) + ' GB';
+          return value.toFixed(1) + ' MB';
+        }
+        function fmtBytes(value) {
+          if (!Number.isFinite(Number(value))) return '—';
+          var n = Number(value);
+          if (n >= 1024 * 1024 * 1024) return (n / 1073741824).toFixed(2) + ' GB';
+          if (n >= 1024 * 1024) return (n / 1048576).toFixed(1) + ' MB';
+          return (n / 1024).toFixed(1) + ' KB';
+        }
+        function fmtTime(ms) {
+          if (!ms) return '—';
+          var d = new Date(ms);
+          var p = function (v) { return String(v).padStart(2, '0'); };
+          return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+        }
+        function actionOptions(selected) {
+          var html = '<option value="">未标记</option>';
+          for (var i = 0; i < ACTIONS.length; i += 1) {
+            var a = ACTIONS[i];
+            html += '<option value="' + a.value + '"' + (a.value === selected ? ' selected' : '') + '>' + a.label + '</option>';
+          }
+          return html;
+        }
+        function markSelect(meta, selected, size) {
+          return (
+            '<select class="mark" data-kind="' + esc(meta.kind) + '" data-target="' + esc(meta.target) +
+            '" data-key="' + esc(meta.key) + '"' + (size ? ' style="max-width:130px"' : '') +
+            ' aria-label="处置 ' + esc(meta.label) + '">' + actionOptions(selected) + '</select>'
+          );
+        }
+
+        function api(path, options) {
+          return fetch(path, options).then(function (response) {
+            return response.text().then(function (text) {
+              var body = null;
+              if (text) {
+                try { body = JSON.parse(text); } catch (e) { body = null; }
+              }
+              if (!response.ok) {
+                throw new Error((body && body.error) || ('请求失败（HTTP ' + response.status + '）'));
+              }
+              return body;
+            });
+          });
+        }
+
+        function setStatus(text, kind) {
+          var area = el('statusArea');
+          if (!text) { area.hidden = true; return; }
+          area.hidden = false;
+          area.textContent = text;
+          area.setAttribute('role', kind === 'error' ? 'alert' : 'status');
+        }
+
+        // ------------------------------------------------------------ render
+
+        function renderKpis() {
+          var data = app.data;
+          if (!data || !data.kpis || !data.totals) { el('kpis').innerHTML = ''; return; }
+          var k = data.kpis;
+          el('kpis').innerHTML =
+            '<div class="kpi"><div class="label">快照可读总量</div><div class="value">' + fmtGB(data.totals.sizeGB) +
+            '</div><div class="meta">' + fmtNum(data.totals.files) + ' 个文件 · ' + fmtNum(data.source ? data.source.dirs : 0) + ' 个目录</div></div>' +
+            '<div class="kpi is-clean"><div class="label">预计可释放（已标清理）</div><div class="value">' + fmtGB(k.releasableGB) +
+            '</div><div class="meta">体积为标记时的实测值，重叠部分已自动扣除</div></div>' +
+            '<div class="kpi is-migrate"><div class="label">预计可迁移（已标迁移）</div><div class="value">' + fmtGB(k.migratableGB) +
+            '</div><div class="meta">迁移后原位置仍需建目录联接</div></div>' +
+            '<div class="kpi"><div class="label">待定</div><div class="value">' + fmtGB(k.pendingGB) +
+            '</div><div class="meta">已记录 ' + fmtNum(k.decidedCount) + ' 条决策</div></div>';
+        }
+
+        function renderTiers() {
+          var data = app.data;
+          if (!data || !data.tiers) { el('tierList').innerHTML = ''; return; }
+          el('tierHint').textContent =
+            '共 ' + fmtNum(data.ruleSummary.buckets) + ' 个条目，其中 ' + fmtNum(data.ruleSummary.unresolved) +
+            ' 个方案标注未能在快照中定位。实测值来自快照，方案值为《C 盘腾盘方案》的原始标注。';
+
+          var html = '';
+          for (var i = 0; i < data.tiers.length; i += 1) {
+            var tier = data.tiers[i];
+            var riskClass = tier.risk === '无风险' ? 'badge-ok' : tier.risk === '高' ? 'badge-danger' : tier.risk === '中' ? 'badge-warn' : 'badge-accent';
+            html += '<details class="tier" data-tier="' + esc(tier.id) + '"' + (i === 0 ? ' open' : '') + '>';
+            html += '<summary><span class="tier-title">' + esc(tier.label) + '</span>';
+            html += '<span class="badge ' + riskClass + '">' + esc(tier.risk) + '</span>';
+            html += '<span class="badge">' + esc(tier.action) + '</span>';
+            html += '<span class="tier-figures">实测 <b>' + fmtGB(tier.measuredGB) + '</b> · 方案 ' + fmtGB(tier.planTotalGB) +
+              ' · ' + fmtNum(tier.rows.length) + ' 个条目</span></summary>';
+            html += '<p class="tier-note">' + esc(tier.note) + '</p>';
+            html += '<div class="table-wrap"><table><caption>' + esc(tier.label) + ' 条目明细</caption><thead><tr>' +
+              '<th scope="col">条目</th><th scope="col">路径</th><th scope="col" class="num">实测</th>' +
+              '<th scope="col" class="num">方案</th><th scope="col">对比</th><th scope="col">处置</th><th scope="col">最大文件</th>' +
+              '</tr></thead><tbody>';
+            for (var j = 0; j < tier.rows.length; j += 1) {
+              html += bucketRowHtml(tier, tier.rows[j]);
+            }
+            html += '</tbody></table></div></details>';
+          }
+          el('tierList').innerHTML = html;
+          syncMarkControls();
+        }
+
+        function bucketRowHtml(tier, row) {
+          var meta = {
+            kind: 'bucket',
+            target: row.id,
+            key: 'bucket:' + row.id,
+            label: row.name,
+            path: row.path,
+            tier: tier.id,
+            sizeGB: row.sizeGB,
+            files: row.files
+          };
+          metaByKey.set(meta.key, meta);
+
+          var statusBadge = row.status === 'unresolved'
+            ? '<span class="badge badge-warn">未定位</span>'
+            : row.diffGB === null || Math.abs(row.diffGB) < 0.02
+              ? '<span class="badge badge-ok">一致</span>'
+              : '<span class="badge badge-accent">差 ' + (row.diffGB > 0 ? '+' : '') + row.diffGB.toFixed(2) + ' GB</span>';
+
+          var planCell = row.status === 'unresolved'
+            ? '方案 ' + fmtGB(row.planGB) + '<div class="cell-note">' + (row.planFiles ? fmtNum(row.planFiles) + ' 个文件' : '') + '</div>'
+            : fmtGB(row.planGB) + '<div class="cell-note">' + (row.planFiles ? fmtNum(row.planFiles) + ' 个文件' : '') + '</div>';
+
+          var measuredCell = row.status === 'unresolved'
+            ? '<span class="badge">不计入</span>'
+            : fmtGB(row.sizeGB) + '<div class="cell-note">' + fmtNum(row.files) + ' 个文件</div>';
+
+          var pending = decisionByKey.get(meta.key);
+          var html = '<tr>';
+          html += '<td><span class="cell-name">' + esc(row.name) + '</span>' + (row.tiers.length > 1 ? ' <span class="badge badge-accent">与 ' + esc(row.tiers.filter(function (t) { return t !== tier.id; }).join('/')) + ' 重叠</span>' : '') +
+            '<div class="cell-note">' + esc(row.note) + '</div></td>';
+          html += '<td class="mono cell-path" title="' + esc(row.path || '') + '">' + esc(row.path || '未定位到具体路径') + '</td>';
+          html += '<td class="num">' + measuredCell + '</td>';
+          html += '<td class="num">' + planCell + '</td>';
+          html += '<td>' + statusBadge + '</td>';
+          html += '<td>' + markSelect(meta, pending ? pending.action : '', true) + '</td>';
+          html += '<td>';
+          if (row.top && row.top.length > 0) {
+            html += '<details><summary class="btn btn-sm" style="display:inline-block">' + row.top.length + ' 个</summary><div class="mono" style="margin-top:6px">';
+            for (var t = 0; t < row.top.length; t += 1) {
+              html += '<div class="cell-path" title="' + esc(row.top[t].path) + '">' + esc(row.top[t].path) + ' <strong>' + fmtMB(row.top[t].sizeMB) + '</strong></div>';
+            }
+            html += '</div></details>';
+          } else {
+            html += '<span class="hint">—</span>';
+          }
+          html += '</td></tr>';
+          return html;
+        }
+
+        function renderUnclassified() {
+          var data = app.data;
+          if (!data || !data.unclassified) {
+            el('unclassifiedBox').innerHTML = '';
+            el('unclassifiedTable').querySelector('tbody').innerHTML = '';
+            return;
+          }
+          var u = data.unclassified;
+          el('unclassifiedBox').innerHTML =
+            '<p><strong>' + fmtGB(u.sizeGB) + '</strong> / ' + fmtNum(u.files) +
+            ' 个文件没有归入任何档位条目。</p><p class="hint">这部分需要你自己判断，可以按目录下钻查看，并把整个目录标成清理、迁移或保留。</p>';
+          var rows = '';
+          for (var i = 0; i < u.dirs.length; i += 1) {
+            var d = u.dirs[i];
+            rows += '<tr><td class="mono cell-path" title="' + esc(d.dir) + '">' + esc(d.dir) + '</td>' +
+              '<td class="num">' + fmtGB(d.sizeGB) + '</td><td class="num">' + fmtNum(d.files) + '</td>' +
+              '<td><button class="btn btn-sm" data-action="browse" data-path="' + esc(d.dir) + '">下钻</button></td></tr>';
+          }
+          el('unclassifiedTable').querySelector('tbody').innerHTML = rows;
+        }
+
+        function renderTree() {
+          var tree = app.tree;
+          var crumbs = '';
+          if (tree) {
+            for (var i = 0; i < tree.breadcrumb.length; i += 1) {
+              var c = tree.breadcrumb[i];
+              if (i > 0) crumbs += '<span class="crumb-sep">\\</span>';
+              crumbs += '<button class="crumb-btn mono" data-action="browse" data-path="' + esc(c.path) + '">' + esc(c.name) + '</button>';
+            }
+          }
+          el('crumbs').innerHTML = crumbs;
+
+          var tbody = el('treeTable').querySelector('tbody');
+          var top = el('dirTopTable').querySelector('tbody');
+          if (!tree) {
+            el('treeCaption').textContent = '目录内容';
+            tbody.innerHTML = '<tr><td colspan="5" class="empty">选择未归类目录或点击路径面包屑开始下钻。</td></tr>';
+            top.innerHTML = '<tr><td colspan="3" class="empty">—</td></tr>';
+            el('dirFilesHint').textContent = '';
+            el('dirFilesArea').innerHTML = '';
+            return;
+          }
+          el('treeCaption').textContent =
+            tree.path + ' · 共 ' + fmtGB(tree.self.sizeGB) + ' / ' + fmtNum(tree.self.files) + ' 个文件（含子目录）';
+
+          var rows = '';
+          for (var j = 0; j < tree.dirs.length; j += 1) {
+            var d = tree.dirs[j];
+            var meta = {
+              kind: 'dir',
+              target: d.path,
+              key: 'dir:' + d.path.toLowerCase(),
+              label: d.name,
+              path: d.path,
+              tier: d.bucketId || 'U',
+              sizeGB: d.sizeGB,
+              files: d.files
+            };
+            metaByKey.set(meta.key, meta);
+            var pending = decisionByKey.get(meta.key);
+            rows += '<tr><td><span class="cell-name mono">' + esc(d.name) + '</span></td>' +
+              '<td class="num">' + fmtGB(d.sizeGB) + '</td>' +
+              '<td class="num">' + fmtNum(d.files) + '</td>' +
+              '<td>' + (d.bucketName ? '<span class="badge badge-accent">' + esc(d.bucketId) + ' ' + esc(d.bucketName) + '</span>' : '<span class="hint">未归类</span>') + '</td>' +
+              '<td><div class="row-actions">' + markSelect(meta, pending ? pending.action : '', true) +
+              '<button class="btn btn-sm" data-action="browse" data-path="' + esc(d.path) + '">进入</button></div></td></tr>';
+          }
+          if (tree.dirsTotal > tree.dirs.length) {
+            rows += '<tr><td colspan="5" class="empty">另有 ' + fmtNum(tree.dirsTotal - tree.dirs.length) + ' 个更小的子目录未显示。</td></tr>';
+          }
+          tbody.innerHTML = rows || '<tr><td colspan="5" class="empty">该目录没有子目录。</td></tr>';
+
+          var fileRows = '';
+          for (var t = 0; t < tree.topFiles.length; t += 1) {
+            var f = tree.topFiles[t];
+            var fullPath = tree.path.replace(/\\$/, '') + '\\' + f.name;
+            var fmeta = {
+              kind: 'file',
+              target: fullPath,
+              key: 'file:' + fullPath.toLowerCase(),
+              label: f.name,
+              path: fullPath,
+              tier: tree.self.bucketId || 'U',
+              sizeGB: Math.round((f.sizeMB / 1024) * 10000) / 10000,
+              files: 1
+            };
+            metaByKey.set(fmeta.key, fmeta);
+            var fpending = decisionByKey.get(fmeta.key);
+            fileRows += '<tr><td class="mono cell-path" title="' + esc(fullPath) + '">' + esc(f.name) + '</td>' +
+              '<td class="num">' + fmtMB(f.sizeMB) + '</td>' +
+              '<td>' + markSelect(fmeta, fpending ? fpending.action : '', true) + '</td></tr>';
+          }
+          top.innerHTML = fileRows || '<tr><td colspan="3" class="empty">该目录没有直属文件。</td></tr>';
+
+          el('dirFilesHint').textContent =
+            '该目录直属文件共 ' + fmtNum(tree.self.directFiles) + ' 个 / ' + fmtGB(tree.self.directGB) +
+            '，上表只列最大的 8 个。';
+
+          var area = el('dirFilesArea');
+          if (app.dirFiles && app.dirFiles.path === tree.path) {
+            area.innerHTML = dirFilesHtml(app.dirFiles);
+            syncMarkControls();
+          } else {
+            area.innerHTML = '';
+          }
+          syncMarkControls();
+        }
+
+        function dirFilesHtml(result) {
+          if (!result) return '';
+          if (result.files.length === 0) {
+            return '<p class="empty">该目录下没有匹配的文件。</p>';
+          }
+          var html = '<table><caption>' + esc(result.path) + ' 下的全部文件（按体积降序，最多 ' + fmtNum(result.files.length) +
+            ' 条；匹配 ' + fmtNum(result.matched) + ' 个，扫描耗时 ' + fmtNum(result.elapsedMs) + ' ms' + (result.cached ? '，来自缓存' : '') + '）</caption>' +
+            '<thead><tr><th scope="col">路径</th><th scope="col" class="num">体积</th><th scope="col">修改时间</th><th scope="col">处置</th></tr></thead><tbody>';
+          for (var i = 0; i < result.files.length; i += 1) {
+            var f = result.files[i];
+            var meta = {
+              kind: 'file',
+              target: f.path,
+              key: 'file:' + f.path.toLowerCase(),
+              label: f.path,
+              path: f.path,
+              tier: 'U',
+              sizeGB: Math.round((f.sizeMB / 1024) * 10000) / 10000,
+              files: 1
+            };
+            metaByKey.set(meta.key, meta);
+            var pending = decisionByKey.get(meta.key);
+            html += '<tr><td class="mono cell-path" title="' + esc(f.path) + '">' + esc(f.path) + '</td>' +
+              '<td class="num">' + fmtMB(f.sizeMB) + '</td><td class="mono">' + esc(f.mtime) + '</td>' +
+              '<td>' + markSelect(meta, pending ? pending.action : '', true) + '</td></tr>';
+          }
+          html += '</tbody></table>';
+          return html;
+        }
+
+        function renderTopFiles() {
+          var data = app.data;
+          var tbody = el('topFilesTable').querySelector('tbody');
+          if (!data || !data.topFiles) { tbody.innerHTML = ''; return; }
+          var rows = '';
+          for (var i = 0; i < data.topFiles.length; i += 1) {
+            var f = data.topFiles[i];
+            rows += '<tr><td class="mono cell-path" title="' + esc(f.path) + '">' + esc(f.path) + '</td>' +
+              '<td>' + esc(f.ext || '—') + '</td><td class="num">' + fmtMB(f.sizeMB) + '</td>' +
+              '<td class="mono">' + esc(f.mtime) + '</td></tr>';
+          }
+          tbody.innerHTML = rows;
+        }
+
+        function renderExtensions() {
+          var data = app.data;
+          if (!data || !data.extensions) { el('extList').innerHTML = ''; return; }
+          var max = data.extensions.reduce(function (acc, item) { return Math.max(acc, item.sizeGB); }, 0) || 1;
+          var html = '';
+          for (var i = 0; i < data.extensions.length; i += 1) {
+            var e = data.extensions[i];
+            html += '<div class="bar-row"><span class="mono">' + esc(e.ext) + '</span>' +
+              '<span class="bar"><span style="width:' + Math.max(2, Math.round((e.sizeGB / max) * 100)) + '%"></span></span>' +
+              '<span class="num">' + fmtGB(e.sizeGB) + '</span></div>';
+          }
+          el('extList').innerHTML = html;
+        }
+
+        function renderDecisions() {
+          var data = app.data;
+          var tbody = el('decisionTable').querySelector('tbody');
+          if (!data || !data.decisions) { tbody.innerHTML = ''; return; }
+          var items = data.decisions.items || [];
+          el('decisionEmpty').hidden = items.length > 0;
+          var rows = '';
+          for (var i = 0; i < items.length; i += 1) {
+            var item = items[i];
+            var kindLabel = item.kind === 'bucket' ? '条目' : item.kind === 'dir' ? '目录' : '文件';
+            rows += '<tr><td class="mono cell-path" title="' + esc(item.path || item.target) + '">' + esc(item.path || item.target) + '</td>' +
+              '<td>' + kindLabel + '</td><td>' + esc(item.tier || '—') + '</td>' +
+              '<td>' + esc(ACTION_LABEL[item.action] || item.action) + '</td>' +
+              '<td class="num">' + fmtGB(item.sizeGB) + '</td>' +
+              '<td><input class="note-input" type="text" value="' + esc(item.note) + '" data-action="note" data-key="' + esc(item.key) +
+              '" aria-label="备注 ' + esc(item.label) + '" placeholder="备注（可选）"></td>' +
+              '<td><button class="btn btn-sm btn-danger" data-action="remove-decision" data-key="' + esc(item.key) + '">移除</button></td></tr>';
+          }
+          tbody.innerHTML = rows;
+        }
+
+        function renderSnapshots() {
+          var data = app.data;
+          var tbody = el('snapshotTable').querySelector('tbody');
+          if (!data || !data.snapshots) { tbody.innerHTML = ''; return; }
+          var rows = '';
+          for (var i = 0; i < data.snapshots.length; i += 1) {
+            var s = data.snapshots[i];
+            rows += '<tr><td><span class="cell-name">' + esc(s.label) + '</span>' +
+              (s.active ? ' <span class="badge badge-ok">当前</span>' : '') +
+              (s.exists ? '' : ' <span class="badge badge-danger">文件缺失</span>') +
+              '<div class="cell-note">' + esc(s.note) + '</div></td>' +
+              '<td>' + (s.kind === 'rescan' ? '看板生成' : '工作区清单') + '</td>' +
+              '<td class="num">' + fmtNum(s.rows) + '</td>' +
+              '<td class="num">' + fmtBytes(s.sizeBytes) + '</td>' +
+              '<td class="mono">' + (s.createdAt ? fmtTime(s.createdAt) : '—') + '</td>' +
+              '<td><div class="row-actions">' +
+              (s.active || !s.exists ? '' : '<button class="btn btn-sm" data-action="activate" data-id="' + esc(s.id) + '">启用</button>') +
+              (s.deletable ? '<button class="btn btn-sm btn-danger" data-action="delete-snapshot" data-id="' + esc(s.id) + '">删除</button>' : '') +
+              '</div></td></tr>';
+          }
+          tbody.innerHTML = rows;
+        }
+
+        function renderSnapshotSelect() {
+          var select = el('snapshotSelect');
+          var data = app.data;
+          if (!data || !data.snapshots) { select.innerHTML = ''; return; }
+          var html = '';
+          for (var i = 0; i < data.snapshots.length; i += 1) {
+            var s = data.snapshots[i];
+            html += '<option value="' + esc(s.id) + '"' + (s.active ? ' selected' : '') + (s.exists ? '' : ' disabled') + '>' +
+              esc(s.label) + (s.exists ? '' : '（文件缺失）') + '</option>';
+          }
+          select.innerHTML = html;
+        }
+
+        function renderSearch() {
+          var area = el('searchArea');
+          var result = app.search;
+          if (!result) { area.innerHTML = ''; return; }
+          if (result.files.length === 0) {
+            area.innerHTML = '<p class="empty">没有匹配的路径。</p>';
+            return;
+          }
+          var html = '<table><caption>匹配 ' + fmtNum(result.matched) + ' 个路径，显示体积最大的 ' + fmtNum(result.files.length) +
+            ' 个（扫描 ' + fmtNum(result.rows) + ' 行，耗时 ' + fmtNum(result.elapsedMs) + ' ms' + (result.cached ? '，来自缓存' : '') + '）</caption>' +
+            '<thead><tr><th scope="col">路径</th><th scope="col" class="num">体积</th><th scope="col">修改时间</th><th scope="col">处置</th></tr></thead><tbody>';
+          for (var i = 0; i < result.files.length; i += 1) {
+            var f = result.files[i];
+            var meta = {
+              kind: 'file',
+              target: f.path,
+              key: 'file:' + f.path.toLowerCase(),
+              label: f.path,
+              path: f.path,
+              tier: 'U',
+              sizeGB: Math.round((f.sizeMB / 1024) * 10000) / 10000,
+              files: 1
+            };
+            metaByKey.set(meta.key, meta);
+            var pending = decisionByKey.get(meta.key);
+            html += '<tr><td class="mono cell-path" title="' + esc(f.path) + '">' + esc(f.path) + '</td>' +
+              '<td class="num">' + fmtMB(f.sizeMB) + '</td><td class="mono">' + esc(f.mtime) + '</td>' +
+              '<td>' + markSelect(meta, pending ? pending.action : '', true) + '</td></tr>';
+          }
+          area.innerHTML = html + '</tbody></table>';
+          syncMarkControls();
+        }
+
+        function renderRescan() {
+          var data = app.data;
+          if (!data) return;
+          var running = data.rescan.running;
+          el('rescanPanel').hidden = !running;
+          el('rescanBtn').disabled = running;
+          el('rescanBtn').textContent = running ? '扫描中…' : '重新扫描';
+          if (running) {
+            var p = data.rescan.progress || {};
+            el('rescanDetail').textContent =
+              '已扫描 ' + fmtNum(p.files || 0) + ' 个文件 / ' + fmtNum(p.dirs || 0) + ' 个目录，累计 ' + fmtBytes(p.bytes || 0) +
+              '，跳过联接 ' + fmtNum(p.skippedLinks || 0) + ' 个，耗时 ' + Math.round((p.elapsedMs || 0) / 1000) + ' 秒。';
+          }
+          if (data.rescan.error) setStatus(data.rescan.error, 'error');
+          if (data.rescan.lastResult && !running) {
+            var r = data.rescan.lastResult;
+            setStatus('上一次扫描完成：' + fmtNum(r.files) + ' 个文件 / ' + fmtBytes(r.bytes) + '，耗时 ' +
+              Math.round(r.elapsedMs / 1000) + ' 秒，跳过 ' + fmtNum(r.skipped) + ' 个无权限目录。', 'status');
+          }
+        }
+
+        function renderAll() {
+          var data = app.data;
+          if (!data) return;
+          decisionByKey = new Map();
+          var items = (data.decisions && data.decisions.items) || [];
+          for (var i = 0; i < items.length; i += 1) decisionByKey.set(items[i].key, items[i]);
+
+          renderSnapshotSelect();
+          renderKpis();
+          renderTiers();
+          renderUnclassified();
+          renderTree();
+          renderTopFiles();
+          renderExtensions();
+          renderDecisions();
+          renderSnapshots();
+          renderSearch();
+          renderRescan();
+        }
+
+        /** 决策变化时只同步控件与汇总，避免整页重绘把展开状态清掉。 */
+        function syncMarkControls() {
+          var selects = document.querySelectorAll('select.mark');
+          for (var i = 0; i < selects.length; i += 1) {
+            var select = selects[i];
+            var key = select.getAttribute('data-key');
+            var item = decisionByKey.get(key);
+            var value = item ? item.action : '';
+            if (select.value !== value) select.value = value;
+          }
+        }
+
+        // ------------------------------------------------------------ data
+
+        function refresh() {
+          return api('/api/state').then(function (data) {
+            app.data = data;
+            renderAll();
+            if (data.status === 'ready') {
+              setStatus(null);
+              if (!app.tree) browse('C:\\');
+            } else if (data.status === 'loading') {
+              var p = data.progress || {};
+              setStatus('正在读取扫描清单：已解析 ' + fmtNum(p.rows || 0) + ' 行…', 'status');
+            } else if (data.status === 'error') {
+              setStatus(data.error || '读取扫描清单失败。', 'error');
+            }
+            schedulePoll();
+          }).catch(function (error) {
+            setStatus('无法连接看板服务：' + error.message, 'error');
+          });
+        }
+
+        function schedulePoll() {
+          if (app.pollTimer) clearTimeout(app.pollTimer);
+          var data = app.data;
+          if (!data) return;
+          var wait = data.status === 'loading' || data.status === 'idle' ? 1200 : null;
+          if (data.rescan.running) wait = 1200;
+          if (wait) {
+            app.pollTimer = setTimeout(function () { refresh(); }, wait);
+          }
+        }
+
+        function browse(path) {
+          app.treePath = path;
+          return api('/api/tree?path=' + encodeURIComponent(path)).then(function (tree) {
+            app.tree = tree;
+            app.dirFiles = null;
+            renderTree();
+          }).catch(function (error) {
+            setStatus('读取目录失败：' + error.message, 'error');
+          });
+        }
+
+        function mark(kind, target, action) {
+          var key = kind === 'bucket' ? 'bucket:' + target : kind + ':' + target.toLowerCase();
+          var meta = metaByKey.get(key);
+          if (!meta) { setStatus('找不到该目标的元数据，请刷新页面。', 'error'); return; }
+          var request;
+          if (action === '') {
+            request = api('/api/decisions/remove', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ kind: kind, target: target })
+            });
+          } else {
+            request = api('/api/decisions', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({
+                items: [{
+                  kind: kind,
+                  target: target,
+                  path: meta.path,
+                  label: meta.label,
+                  tier: meta.tier,
+                  action: action,
+                  sizeGB: meta.sizeGB,
+                  files: meta.files
+                }]
+              })
+            });
+          }
+          request.then(function (result) {
+            if (app.data) app.data.decisions = result.summary;
+            decisionByKey = new Map();
+            var items = (result.summary.items || []);
+            for (var i = 0; i < items.length; i += 1) decisionByKey.set(items[i].key, items[i]);
+            renderKpis();
+            renderDecisions();
+            syncMarkControls();
+            setStatus(action === '' ? '已撤销该决策。' : '已记录：' + meta.label + ' → ' + ACTION_LABEL[action], 'status');
+          }).catch(function (error) {
+            setStatus('保存决策失败：' + error.message, 'error');
+          });
+        }
+
+        // ------------------------------------------------------------ events
+
+        document.addEventListener('change', function (event) {
+          var target = event.target;
+          if (target.classList && target.classList.contains('mark')) {
+            mark(target.getAttribute('data-kind'), target.getAttribute('data-target'), target.value);
+            return;
+          }
+          if (target.getAttribute && target.getAttribute('data-action') === 'note') {
+            var key = target.getAttribute('data-key');
+            var item = decisionByKey.get(key);
+            if (!item) return;
+            api('/api/decisions', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({
+                items: [{
+                  kind: item.kind,
+                  target: item.target,
+                  path: item.path,
+                  label: item.label,
+                  tier: item.tier,
+                  action: item.action,
+                  sizeGB: item.sizeGB,
+                  files: item.files,
+                  note: target.value
+                }]
+              })
+            }).then(function (result) {
+              if (app.data) app.data.decisions = result.summary;
+              setStatus('备注已保存。', 'status');
+            }).catch(function (error) {
+              setStatus('保存备注失败：' + error.message, 'error');
+            });
+          }
+        });
+
+        document.addEventListener('click', function (event) {
+          var button = event.target.closest ? event.target.closest('[data-action]') : null;
+          if (!button) return;
+          var action = button.getAttribute('data-action');
+          if (action === 'note' || action === 'mark') return;
+
+          if (action === 'browse') {
+            browse(button.getAttribute('data-path'));
+          } else if (action === 'activate') {
+            api('/api/snapshots/activate', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ id: button.getAttribute('data-id') })
+            }).then(function () {
+              app.tree = null;
+              setStatus('已切换快照，正在重新读取清单…', 'status');
+              refresh();
+            }).catch(function (error) { setStatus(error.message, 'error'); });
+          } else if (action === 'delete-snapshot') {
+            var id = button.getAttribute('data-id');
+            if (!window.confirm('删除看板生成的快照 ' + id + '？只删除这个看板自己生成的文件，不会动工作区里的扫描清单。')) return;
+            api('/api/snapshots/delete', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ id: id })
+            }).then(function () {
+              app.tree = null;
+              refresh();
+            }).catch(function (error) { setStatus(error.message, 'error'); });
+          } else if (action === 'remove-decision') {
+            var item = decisionByKey.get(button.getAttribute('data-key'));
+            if (!item) return;
+            mark(item.kind, item.target, '');
+          }
+        });
+
+        el('snapshotSelect').addEventListener('change', function () {
+          var id = el('snapshotSelect').value;
+          api('/api/snapshots/activate', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ id: id })
+          }).then(function () {
+            app.tree = null;
+            setStatus('已切换快照，正在重新读取清单…', 'status');
+            refresh();
+          }).catch(function (error) { setStatus(error.message, 'error'); });
+        });
+
+        el('reloadBtn').addEventListener('click', function () {
+          app.tree = null;
+          api('/api/snapshots/reload', { method: 'POST' }).then(function () {
+            setStatus('正在重新读取清单…', 'status');
+            refresh();
+          }).catch(function (error) { setStatus(error.message, 'error'); });
+        });
+
+        el('rescanBtn').addEventListener('click', function () {
+          if (!window.confirm('对 ' + (app.data && app.data.rescan ? app.data.rescan.root : 'C:\\') +
+            ' 做一次全盘扫描？只读取文件名、大小和修改时间，不会打开或修改任何文件。预计 1–2 分钟，完成后会自动切换到这个新快照。')) return;
+          api('/api/rescan', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ confirm: true })
+          }).then(function () {
+            setStatus('扫描已开始，可以离开这个页面，完成后会写入新快照。', 'status');
+            refresh();
+          }).catch(function (error) { setStatus(error.message, 'error'); });
+        });
+
+        el('cancelRescanBtn').addEventListener('click', function () {
+          api('/api/rescan/cancel', { method: 'POST' }).then(function () {
+            setStatus('正在取消扫描…', 'status');
+          }).catch(function (error) { setStatus(error.message, 'error'); });
+        });
+
+        el('loadDirFilesBtn').addEventListener('click', function () {
+          if (!app.tree) return;
+          el('dirFilesHint').textContent = '正在全量扫描清单，请稍候…';
+          api('/api/dir-files?path=' + encodeURIComponent(app.tree.path)).then(function (result) {
+            app.dirFiles = result;
+            renderTree();
+          }).catch(function (error) {
+            setStatus('读取目录文件失败：' + error.message, 'error');
+          });
+        });
+
+        el('searchBtn').addEventListener('click', function () {
+          var query = el('searchInput').value.trim();
+          if (query.length < 2) { setStatus('请输入至少 2 个字符。', 'error'); return; }
+          el('searchHint').textContent = '正在扫描清单…';
+          api('/api/search?q=' + encodeURIComponent(query)).then(function (result) {
+            app.search = result;
+            el('searchHint').textContent = '';
+            renderSearch();
+          }).catch(function (error) {
+            el('searchHint').textContent = '';
+            setStatus('搜索失败：' + error.message, 'error');
+          });
+        });
+
+        el('searchInput').addEventListener('keydown', function (event) {
+          if (event.key === 'Enter') el('searchBtn').click();
+        });
+
+        el('exportBtn').addEventListener('click', function () {
+          window.location.href = '/api/export/decisions.csv';
+        });
+
+        el('clearBtn').addEventListener('click', function () {
+          if (!window.confirm('清空全部决策记录？该操作只影响看板里的决策清单，不会影响磁盘上的任何文件。')) return;
+          api('/api/decisions/clear', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ confirm: true })
+          }).then(function (result) {
+            if (app.data) app.data.decisions = result.summary;
+            decisionByKey = new Map();
+            renderKpis();
+            renderDecisions();
+            syncMarkControls();
+            setStatus('决策已清空。', 'status');
+          }).catch(function (error) { setStatus(error.message, 'error'); });
+        });
+
+        function connectEvents() {
+          if (typeof EventSource === 'undefined') return;
+          var source = new EventSource('/api/events');
+          source.addEventListener('state', function (event) {
+            try {
+              var payload = JSON.parse(event.data);
+              if (app.data && payload && payload.summary) {
+                app.data.decisions = payload.summary;
+                decisionByKey = new Map();
+                var items = payload.summary.items || [];
+                for (var i = 0; i < items.length; i += 1) decisionByKey.set(items[i].key, items[i]);
+                renderKpis();
+                renderDecisions();
+                syncMarkControls();
+              }
+            } catch (e) { /* 忽略无法解析的事件 */ }
+          });
+          source.addEventListener('index', function () {
+            refresh();
+          });
+          source.addEventListener('rescan', function (event) {
+            try {
+              var payload = JSON.parse(event.data);
+              if (app.data && payload && payload.progress) {
+                app.data.rescan.running = payload.running !== false;
+                app.data.rescan.progress = payload.progress;
+                renderRescan();
+              } else {
+                refresh();
+              }
+            } catch (e) { /* 忽略 */ }
+          });
+          source.onerror = function () { /* 浏览器会自动重连 */ };
+        }
+
+        refresh();
+        connectEvents();
+      })();
+    </script>
+  </body>
+</html>

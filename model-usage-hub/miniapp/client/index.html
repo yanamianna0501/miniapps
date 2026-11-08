@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>模型用量台</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="./app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">跳至用量内容</a>
+    <main id="main" class="page">
+      <header class="page-header">
+        <div><h1>模型用量台</h1><p class="muted">本机调用、上下文压力与账户额度，一处核对。</p></div>
+        <div class="toolbar">
+          <label>统计范围 <select id="range"><option value="7d">近 7 天</option><option value="30d">近 30 天</option><option value="all">全部记录</option></select></label>
+          <button id="refresh" type="button" class="primary">刷新用量</button>
+          <button id="export" type="button">导出 JSON</button>
+          <label class="theme-label">外观 <select id="theme"><option value="light">浅色</option><option value="dark">深色</option><option value="system">跟随系统</option></select></label>
+        </div>
+      </header>
+      <div class="status-line"><span id="overview-status" role="status" aria-live="polite">正在读取本机统计…</span><button id="overview-retry" type="button" hidden>重试用量</button><span id="export-status" role="status" aria-live="polite"></span></div>
+      <section aria-label="本机用量摘要" id="kpis" class="kpi-grid" aria-busy="true">
+        <article class="kpi"><h2>请求数</h2><strong id="kpi-calls">—</strong><p>本机记录的模型调用</p></article>
+        <article class="kpi"><h2>输入 + 输出 Tokens</h2><strong id="kpi-tokens">—</strong><p>未缓存输入与输出，非金额</p></article>
+        <article class="kpi"><h2>缓存命中率</h2><strong id="kpi-cache">—</strong><p id="kpi-cache-note">缓存读取单独统计</p></article>
+        <article class="kpi"><h2>会话数</h2><strong id="kpi-sessions">—</strong><p id="kpi-turns">所选范围内的会话</p></article>
+      </section>
+      <nav class="tabs" role="tablist" aria-label="用量视图"><button type="button" id="tab-overview" role="tab" aria-selected="true" aria-controls="view-overview">用量总览</button><button type="button" id="tab-accounts" role="tab" aria-selected="false" aria-controls="view-accounts" tabindex="-1">模型与额度</button></nav>
+      <div id="view-overview" role="tabpanel" aria-labelledby="tab-overview">
+      <div class="overview-grid">
+        <section class="panel" aria-labelledby="trend-title"><div class="section-head"><h2 id="trend-title">每日用量</h2><span class="meta">输入 + 输出 Tokens</span></div><div id="trend" class="trend"><p class="empty">正在加载趋势…</p></div></section>
+        <section class="panel" aria-labelledby="pressure-title"><div class="section-head"><h2 id="pressure-title">上下文压力</h2><span class="meta">模型峰值 / 窗口</span></div><div id="pressure"><p class="empty">正在加载上下文记录…</p></div><p class="footnote">上下文占用是采样值，不是累计消费；未采样不按 0 处理。</p></section>
+      </div>
+      <section class="panel" aria-labelledby="models-title">
+        <div class="section-head"><div><h2 id="models-title">历史模型用量</h2><p class="meta">按模型名跨服务商汇总，含历史配置；按输入 + 输出 Tokens 降序。</p></div><label>搜索模型 <input id="model-search" type="search" placeholder="模型名称" /></label></div>
+        <div id="models-table" class="table-wrap" role="region" aria-label="历史模型用量表，可横向滚动" tabindex="0"><p class="empty">正在加载模型…</p></div>
+        <div id="models-pager" class="pager"></div>
+      </section>
+      </div>
+      <div id="view-accounts" role="tabpanel" aria-labelledby="tab-accounts" hidden>
+      <section class="panel" aria-labelledby="providers-title">
+        <div class="section-head"><div><h2 id="providers-title">账户额度</h2><p class="meta">服务商共享额度，不拆算到模型；账户查询不影响本地统计。</p></div><button id="quota-refresh" type="button">刷新账户额度</button></div>
+        <div class="status-line"><span id="providers-status" role="status" aria-live="polite">正在查询账户，可能需要约 20 秒…</span><button id="providers-retry" type="button" hidden>重试账户查询</button></div>
+        <div id="providers" class="provider-grid" aria-busy="true"><p class="empty">等待服务商返回额度…</p></div>
+      </section>
+      <section class="panel" aria-labelledby="configured-title">
+        <div class="section-head"><div><h2 id="configured-title">全部配置模型</h2><p class="meta">可归属记录（新版运行时）；旧记录见历史模型统计。禁用模型仍保留。</p></div><div class="toolbar"><label>服务商 <select id="provider-filter"><option value="">全部服务商</option></select></label><label>搜索配置 <input id="configured-search" type="search" placeholder="模型或服务商" /></label></div></div>
+        <div id="configured-table" class="table-wrap" role="region" aria-label="全部配置模型表，可横向滚动" tabindex="0"><p class="empty">正在读取配置模型…</p></div><div id="configured-pager" class="pager"></div>
+      </section>
+      </div>
+      <footer class="footnote"><p>数据口径：输入 + 输出（billedTokens）仅为 Tokens 统计量，不是金额或账单。缓存读取单列，不并入该统计量。本机记录不等于跨设备总用量；账户额度以服务商返回的时间和口径为准。</p><p id="coverage-note">覆盖情况读取中。</p></footer>
+      <noscript><p role="alert">请启用 JavaScript 以读取本机用量。此页面不会载入远程资源。</p></noscript>
+    </main>
+  </body>
+</html>

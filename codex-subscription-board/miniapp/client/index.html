@@ -1,0 +1,1095 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Codex 订阅总览</title>
+    <style>
+      :root,
+      [data-theme='light'] {
+        --mcode-bg: #ffffff;
+        --mcode-bg-secondary: #f5f5f5;
+        --mcode-surface: #ffffff;
+        --mcode-surface-muted: #fafafa;
+        --mcode-text: #171717;
+        --mcode-text-muted: #666666;
+        --mcode-text-subtle: #adadad;
+        --mcode-border: #0a0a0a14;
+        --mcode-border-strong: #0a0a0af2;
+        --mcode-accent: #0094fc;
+        --mcode-success: #04b54b;
+        --mcode-warning: #f56811;
+        --mcode-danger: #f73646;
+        --mcode-primary-action-bg: #171717;
+        --mcode-primary-action-text: #ffffff;
+        --mcode-track: #0a0a0a0f;
+      }
+
+      [data-theme='dark'] {
+        --mcode-bg: #171717;
+        --mcode-bg-secondary: #1c1c1c;
+        --mcode-surface: #262626;
+        --mcode-surface-muted: #262626;
+        --mcode-text: #ededed;
+        --mcode-text-muted: #949494;
+        --mcode-text-subtle: #666666;
+        --mcode-border: #ffffff14;
+        --mcode-border-strong: #fffffff2;
+        --mcode-accent: #0077d9;
+        --mcode-success: #009c3d;
+        --mcode-warning: #e25507;
+        --mcode-danger: #e31937;
+        --mcode-primary-action-bg: #ffffff;
+        --mcode-primary-action-text: #171717;
+        --mcode-track: #ffffff14;
+      }
+
+      /* Follow the system theme unless the page explicitly sets data-theme. */
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme='light']) {
+          --mcode-bg: #171717;
+          --mcode-bg-secondary: #1c1c1c;
+          --mcode-surface: #262626;
+          --mcode-surface-muted: #262626;
+          --mcode-text: #ededed;
+          --mcode-text-muted: #949494;
+          --mcode-text-subtle: #666666;
+          --mcode-border: #ffffff14;
+          --mcode-border-strong: #fffffff2;
+          --mcode-accent: #0077d9;
+          --mcode-success: #009c3d;
+          --mcode-warning: #e25507;
+          --mcode-danger: #e31937;
+          --mcode-primary-action-bg: #ffffff;
+          --mcode-primary-action-text: #171717;
+          --mcode-track: #ffffff14;
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 24px;
+        background: var(--mcode-bg);
+        color: var(--mcode-text);
+        font-family: ui-sans-serif, -apple-system, system-ui, 'Segoe UI', Helvetica, Arial,
+          'Microsoft YaHei', sans-serif;
+        font-size: 14px;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .mono {
+        font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* ---------- header ---------- */
+
+      .page-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 24px;
+      }
+
+      h1 {
+        margin: 0 0 4px;
+        font-size: 18px;
+        line-height: 28px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+
+      .subtitle {
+        margin: 0;
+        font-size: 12px;
+        line-height: 16px;
+        color: var(--mcode-text-muted);
+      }
+
+      .head-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      button {
+        font: inherit;
+        cursor: pointer;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        transition: background-color 150ms ease-out, opacity 150ms ease-out;
+      }
+
+      button:focus-visible {
+        outline: 2px solid var(--mcode-accent);
+        outline-offset: 2px;
+      }
+
+      .btn-primary {
+        height: 36px;
+        padding: 0 16px;
+        background: var(--mcode-primary-action-bg);
+        color: var(--mcode-primary-action-text);
+        font-weight: 500;
+      }
+
+      .btn-primary:hover:not(:disabled) {
+        opacity: 0.85;
+      }
+
+      .btn-primary:disabled {
+        opacity: 0.45;
+        cursor: default;
+      }
+
+      /* ---------- layout ---------- */
+
+      section {
+        margin-bottom: 32px;
+      }
+
+      .section-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: 16px;
+        line-height: 24px;
+        font-weight: 500;
+      }
+
+      .section-note {
+        font-size: 12px;
+        color: var(--mcode-text-muted);
+      }
+
+      /* ---------- cards ---------- */
+
+      .card {
+        background: var(--mcode-surface);
+        border: 1px solid var(--mcode-border);
+        border-radius: 12px;
+        padding: 20px;
+      }
+
+      .window-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .window-label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      .window-name {
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .window-span {
+        font-size: 12px;
+        color: var(--mcode-text-subtle);
+      }
+
+      .window-value {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        margin-bottom: 4px;
+      }
+
+      .big-number {
+        font-size: 28px;
+        line-height: 1.1;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+      }
+
+      .big-unit {
+        font-size: 13px;
+        color: var(--mcode-text-muted);
+      }
+
+      .track {
+        height: 6px;
+        border-radius: 999px;
+        background: var(--mcode-track);
+        overflow: hidden;
+        margin: 12px 0 8px;
+      }
+
+      .fill {
+        height: 100%;
+        border-radius: 999px;
+        background: var(--mcode-success);
+        transition: width 300ms ease-out, background-color 300ms ease-out;
+      }
+
+      .fill.is-warning {
+        background: var(--mcode-warning);
+      }
+
+      .fill.is-danger {
+        background: var(--mcode-danger);
+      }
+
+      .window-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        font-size: 12px;
+        color: var(--mcode-text-muted);
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 1px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--mcode-border);
+        font-size: 11px;
+        line-height: 18px;
+        color: var(--mcode-text-muted);
+        white-space: nowrap;
+      }
+
+      .pill.ok {
+        color: var(--mcode-success);
+        border-color: color-mix(in srgb, var(--mcode-success) 35%, transparent);
+      }
+
+      .pill.warn {
+        color: var(--mcode-warning);
+        border-color: color-mix(in srgb, var(--mcode-warning) 35%, transparent);
+      }
+
+      .pill.bad {
+        color: var(--mcode-danger);
+        border-color: color-mix(in srgb, var(--mcode-danger) 35%, transparent);
+      }
+
+      .facts {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 1px;
+        margin-top: 16px;
+        background: var(--mcode-border);
+        border: 1px solid var(--mcode-border);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+
+      .fact {
+        background: var(--mcode-surface);
+        padding: 14px 16px;
+      }
+
+      .fact dt {
+        font-size: 12px;
+        color: var(--mcode-text-muted);
+        margin-bottom: 4px;
+      }
+
+      .fact dd {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 500;
+      }
+
+      .fact dd small {
+        font-weight: 400;
+        font-size: 12px;
+        color: var(--mcode-text-muted);
+      }
+
+      /* ---------- models table ---------- */
+
+      .table-wrap {
+        border: 1px solid var(--mcode-border);
+        border-radius: 12px;
+        overflow: hidden;
+        background: var(--mcode-surface);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th {
+        text-align: left;
+        font-size: 12px;
+        font-weight: 400;
+        color: var(--mcode-text-muted);
+        background: var(--mcode-surface-muted);
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--mcode-border);
+        white-space: nowrap;
+      }
+
+      td {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--mcode-border);
+        vertical-align: top;
+      }
+
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      tbody tr:hover {
+        background: var(--mcode-surface-muted);
+      }
+
+      .model-name {
+        font-weight: 500;
+      }
+
+      .model-slug {
+        display: block;
+        font-size: 11px;
+        color: var(--mcode-text-subtle);
+      }
+
+      .model-desc {
+        display: block;
+        font-size: 12px;
+        color: var(--mcode-text-muted);
+        margin-top: 2px;
+        max-width: 34ch;
+      }
+
+      .ctx-cell {
+        white-space: nowrap;
+      }
+
+      .ctx-main {
+        font-weight: 500;
+      }
+
+      .ctx-max {
+        display: block;
+        font-size: 11px;
+        color: var(--mcode-text-subtle);
+      }
+
+      .level-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+
+      .level {
+        font-size: 11px;
+        line-height: 18px;
+        padding: 0 6px;
+        border-radius: 4px;
+        background: var(--mcode-surface-muted);
+        border: 1px solid var(--mcode-border);
+        color: var(--mcode-text-muted);
+      }
+
+      .level.is-default {
+        color: var(--mcode-text);
+        border-color: var(--mcode-border-strong);
+      }
+
+      .tag-hidden {
+        font-size: 11px;
+        color: var(--mcode-text-subtle);
+      }
+
+      /* ---------- history chart ---------- */
+
+      .chart-box {
+        padding: 20px;
+      }
+
+      .chart-svg {
+        display: block;
+        width: 100%;
+        height: 132px;
+        overflow: visible;
+      }
+
+      .chart-bar {
+        fill: var(--mcode-accent);
+        opacity: 0.85;
+      }
+
+      .chart-bar.secondary {
+        fill: var(--mcode-text-subtle);
+        opacity: 0.6;
+      }
+
+      .chart-axis {
+        fill: var(--mcode-text-subtle);
+        font-size: 10px;
+      }
+
+      .chart-grid {
+        stroke: var(--mcode-border);
+        stroke-width: 1;
+      }
+
+      .legend {
+        display: flex;
+        gap: 16px;
+        font-size: 12px;
+        color: var(--mcode-text-muted);
+        margin-top: 12px;
+        flex-wrap: wrap;
+      }
+
+      .legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .swatch {
+        width: 8px;
+        height: 8px;
+        border-radius: 2px;
+        background: var(--mcode-accent);
+        opacity: 0.85;
+      }
+
+      .swatch.secondary {
+        background: var(--mcode-text-subtle);
+        opacity: 0.6;
+      }
+
+      /* ---------- states ---------- */
+
+      .notice {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 12px 16px;
+        border-radius: 12px;
+        border: 1px solid var(--mcode-border);
+        background: var(--mcode-surface-muted);
+        font-size: 13px;
+        margin-bottom: 20px;
+      }
+
+      .notice[data-kind='error'] {
+        border-color: color-mix(in srgb, var(--mcode-danger) 40%, transparent);
+        color: var(--mcode-text);
+      }
+
+      .notice[data-kind='warn'] {
+        border-color: color-mix(in srgb, var(--mcode-warning) 40%, transparent);
+      }
+
+      .notice-title {
+        font-weight: 500;
+      }
+
+      .notice-detail {
+        color: var(--mcode-text-muted);
+        font-size: 12px;
+        margin-top: 2px;
+      }
+
+      .empty {
+        padding: 32px 20px;
+        text-align: center;
+        color: var(--mcode-text-muted);
+        font-size: 13px;
+      }
+
+      .skeleton {
+        height: 12px;
+        border-radius: 6px;
+        background: var(--mcode-track);
+        animation: pulse 1.4s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.45;
+        }
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation-duration: 0.01ms !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+
+      @media (max-width: 768px) {
+        body {
+          padding: 16px;
+        }
+        .window-grid {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .table-wrap {
+          overflow-x: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="page-head">
+      <div>
+        <h1>Codex 订阅总览</h1>
+        <p class="subtitle" id="subtitle">正在读取账号数据…</p>
+      </div>
+      <div class="head-actions">
+        <button class="btn-primary" id="refresh" type="button">刷新</button>
+      </div>
+    </header>
+
+    <div id="notices"></div>
+
+    <section aria-labelledby="quota-heading">
+      <div class="section-head">
+        <h2 id="quota-heading">额度窗口</h2>
+        <span class="section-note" id="quota-note"></span>
+      </div>
+
+      <div class="window-grid" id="windows" aria-live="polite">
+        <article class="card" aria-busy="true">
+          <div class="skeleton" style="width: 45%"></div>
+          <div class="skeleton" style="width: 70%; margin-top: 16px; height: 28px"></div>
+          <div class="skeleton" style="width: 100%; margin-top: 16px"></div>
+        </article>
+        <article class="card" aria-busy="true">
+          <div class="skeleton" style="width: 45%"></div>
+          <div class="skeleton" style="width: 70%; margin-top: 16px; height: 28px"></div>
+          <div class="skeleton" style="width: 100%; margin-top: 16px"></div>
+        </article>
+      </div>
+
+      <dl class="facts" id="facts"></dl>
+    </section>
+
+    <section aria-labelledby="models-heading">
+      <div class="section-head">
+        <h2 id="models-heading">模型目录</h2>
+        <span class="section-note" id="models-note"></span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <caption class="empty" id="models-caption" hidden></caption>
+          <thead>
+            <tr>
+              <th scope="col">模型</th>
+              <th scope="col">上下文</th>
+              <th scope="col">推理档位</th>
+              <th scope="col">能力</th>
+            </tr>
+          </thead>
+          <tbody id="models-body">
+            <tr>
+              <td colspan="4"><div class="skeleton" style="width: 100%"></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section aria-labelledby="history-heading">
+      <div class="section-head">
+        <h2 id="history-heading">本地累积趋势</h2>
+        <span class="section-note" id="history-note"></span>
+      </div>
+      <div class="card chart-box" id="chart-box">
+        <div class="empty" id="chart-empty">还没有累积到数据。打开这个页面后每分钟会记录一次，攒够几个采样点就能看到趋势。</div>
+        <svg class="chart-svg" id="chart" role="img" aria-labelledby="chart-title" hidden>
+          <title id="chart-title">按日累积的额度消耗百分比</title>
+          <g id="chart-grid-lines"></g>
+          <g id="chart-bars"></g>
+          <g id="chart-labels"></g>
+        </svg>
+        <div class="legend" id="legend" hidden>
+          <span class="legend-item"><span class="swatch"></span>短周期窗口</span>
+          <span class="legend-item"><span class="swatch secondary"></span>每周窗口</span>
+        </div>
+      </div>
+    </section>
+
+    <script>
+      const state = {
+        loading: false,
+        data: null,
+        error: null,
+        timer: null,
+      };
+
+      const el = {
+        subtitle: document.getElementById('subtitle'),
+        refresh: document.getElementById('refresh'),
+        notices: document.getElementById('notices'),
+        windows: document.getElementById('windows'),
+        quotaNote: document.getElementById('quota-note'),
+        facts: document.getElementById('facts'),
+        modelsBody: document.getElementById('models-body'),
+        modelsNote: document.getElementById('models-note'),
+        modelsCaption: document.getElementById('models-caption'),
+        historyNote: document.getElementById('history-note'),
+        chart: document.getElementById('chart'),
+        chartEmpty: document.getElementById('chart-empty'),
+        chartBars: document.getElementById('chart-bars'),
+        chartGrid: document.getElementById('chart-grid-lines'),
+        chartLabels: document.getElementById('chart-labels'),
+        legend: document.getElementById('legend'),
+      };
+
+      const PLAN_LABEL = { plus: 'Plus', pro: 'Pro', free: 'Free', team: 'Team', business: 'Business' };
+      const LEVEL_LABEL = {
+        low: '低',
+        medium: '中',
+        high: '高',
+        xhigh: '极高',
+        max: '最大',
+        ultra: '极致',
+        minimal: '最小',
+        none: '无',
+      };
+      const MODALITY_LABEL = { text: '文本', image: '图片', audio: '语音' };
+
+      function text(value, fallback = '—') {
+        return value === null || value === undefined || value === '' ? fallback : String(value);
+      }
+
+      function formatPercent(value) {
+        if (typeof value !== 'number' || !isFinite(value)) return '—';
+        return value % 1 === 0 ? String(value) : value.toFixed(1);
+      }
+
+      function formatSpan(seconds) {
+        if (!seconds || !isFinite(seconds)) return '—';
+        const hours = seconds / 3600;
+        if (hours < 24) return hours % 1 === 0 ? `${hours} 小时` : `${hours.toFixed(1)} 小时`;
+        const days = hours / 24;
+        return days % 1 === 0 ? `${days} 天` : `${days.toFixed(1)} 天`;
+      }
+
+      function formatCountdown(ms) {
+        if (typeof ms !== 'number' || !isFinite(ms) || ms <= 0) return '已重置';
+        const totalMinutes = Math.floor(ms / 60000);
+        const days = Math.floor(totalMinutes / 1440);
+        const hours = Math.floor((totalMinutes % 1440) / 60);
+        const minutes = totalMinutes % 60;
+        if (days > 0) return `${days} 天 ${hours} 小时后`;
+        if (hours > 0) return `${hours} 小时 ${minutes} 分后`;
+        return `${minutes} 分钟后`;
+      }
+
+      function formatTokens(value) {
+        if (typeof value !== 'number' || !isFinite(value)) return '—';
+        if (value >= 1000000) return `${(value / 1000000).toFixed(value % 1000000 === 0 ? 0 : 1)}M`;
+        if (value >= 1000) return `${Math.round(value / 1000)}K`;
+        return String(value);
+      }
+
+      function formatTime(ms) {
+        if (!ms) return '—';
+        const d = new Date(ms);
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${d.getMonth() + 1}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      }
+
+      function severity(usedPercent) {
+        if (usedPercent >= 90) return 'danger';
+        if (usedPercent >= 70) return 'warning';
+        return 'ok';
+      }
+
+      function renderNotices() {
+        const parts = [];
+        const data = state.data;
+
+        if (state.error) {
+          parts.push(`
+            <div class="notice" data-kind="error" role="alert">
+              <div>
+                <div class="notice-title">读取失败</div>
+                <div class="notice-detail">${escapeHtml(state.error.message || '未知错误')}${
+                  state.error.code ? `（${escapeHtml(state.error.code)}）` : ''
+                }</div>
+              </div>
+            </div>`);
+        }
+
+        if (data && data.ok) {
+          const quota = data.quota;
+          if (quota && quota.limitReached) {
+            parts.push(`
+              <div class="notice" data-kind="error" role="alert">
+                <div>
+                  <div class="notice-title">额度已用尽</div>
+                  <div class="notice-detail">服务端标记这个账号当前不可继续请求${
+                    quota.reachedType ? `（${escapeHtml(quota.reachedType)}）` : ''
+                  }，等窗口重置或使用重置卡。</div>
+                </div>
+              </div>`);
+          }
+          const secondary = quota && quota.secondary;
+          if (secondary && secondary.usedPercent >= 80 && !(quota && quota.limitReached)) {
+            parts.push(`
+              <div class="notice" data-kind="warn" role="status">
+                <div>
+                  <div class="notice-title">每周额度已用 ${formatPercent(secondary.usedPercent)}%</div>
+                  <div class="notice-detail">重置时间 ${formatTime(secondary.resetAt)}，注意留量给必须完成的任务。</div>
+                </div>
+              </div>`);
+          }
+          const creds = data.credentials;
+          if (creds && creds.expiresAt) {
+            const left = creds.expiresAt - Date.now();
+            if (left > 0 && left < 24 * 3600 * 1000) {
+              const renewable = creds.renewable === true;
+              parts.push(`
+                <div class="notice" data-kind="${renewable ? '' : 'warn'}" role="status">
+                  <div>
+                    <div class="notice-title">登录凭据即将到期</div>
+                    <div class="notice-detail">${
+                      renewable
+                        ? '到期后会自动续期，一般不用重新登录。'
+                        : '这份登录没有续期凭据，到期后需要重新登录一次。'
+                    }约 ${formatCountdown(left)}（${formatTime(creds.expiresAt)}）。</div>
+                  </div>
+                </div>`);
+            }
+          }
+        }
+
+        el.notices.innerHTML = parts.join('');
+      }
+
+      function renderWindows() {
+        const data = state.data;
+        const quota = data && data.quota;
+        if (!quota) {
+          el.windows.innerHTML = `
+            <article class="card"><div class="empty">没有读到额度数据</div></article>
+            <article class="card"><div class="empty">没有读到额度数据</div></article>`;
+          return;
+        }
+
+        const windows = [
+          { key: 'primary', name: '短周期窗口', data: quota.primary, hint: '常用窗口，额度恢复较快' },
+          { key: 'secondary', name: '每周窗口', data: quota.secondary, hint: '每周固定额度' },
+        ];
+
+        el.windows.innerHTML = windows
+          .map((item) => {
+            const w = item.data;
+            if (!w) {
+              return `<article class="card"><div class="window-label"><span class="window-name">${item.name}</span></div><div class="empty">账号没有返回这个窗口</div></article>`;
+            }
+            const level = severity(w.usedPercent);
+            const remainMs = w.resetAt ? w.resetAt - Date.now() : null;
+            return `
+              <article class="card">
+                <div class="window-label">
+                  <span class="window-name">${item.name}</span>
+                  <span class="pill ${level === 'ok' ? 'ok' : level === 'warning' ? 'warn' : 'bad'}">
+                    ${level === 'ok' ? '正常' : level === 'warning' ? '偏高' : '接近上限'}
+                  </span>
+                </div>
+                <div class="window-value">
+                  <span class="big-number mono" data-role="used" data-used="${w.usedPercent}">${formatPercent(
+                    w.usedPercent
+                  )}</span>
+                  <span class="big-unit">% 已用 · 剩 ${formatPercent(w.remainingPercent)}%</span>
+                </div>
+                <div class="track" role="img" aria-label="已用 ${formatPercent(w.usedPercent)}%">
+                  <div class="fill ${level === 'ok' ? '' : level === 'warning' ? 'is-warning' : 'is-danger'}" style="width: ${Math.max(
+                    0,
+                    Math.min(100, w.usedPercent)
+                  )}%"></div>
+                </div>
+                <div class="window-meta">
+                  <span>窗口 ${formatSpan(w.windowSeconds)}</span>
+                  <span data-reset-at="${w.resetAt || ''}" data-role="countdown">${
+                    remainMs === null ? '—' : formatCountdown(remainMs)
+                  }</span>
+                </div>
+                <div class="window-meta" style="margin-top: 4px">
+                  <span>${item.hint}</span>
+                  <span>重置 ${formatTime(w.resetAt)}</span>
+                </div>
+              </article>`;
+          })
+          .join('');
+      }
+
+      function renderFacts() {
+        const data = state.data;
+        const quota = data && data.quota;
+        if (!quota) {
+          el.facts.innerHTML = '';
+          return;
+        }
+        const credits = quota.credits || {};
+        const resetCredits = quota.resetCredits || {};
+        const facts = [
+          {
+            label: '套餐',
+            value: PLAN_LABEL[quota.planType] || text(quota.planType),
+            small: quota.allowed ? '可继续请求' : '当前不可请求',
+          },
+          {
+            label: '额外 Credits',
+            value: credits.unlimited ? '不限' : text(credits.balance, '0'),
+            small: credits.hasCredits ? '有余额' : '没有余额',
+          },
+          {
+            label: '重置卡',
+            value: `${resetCredits.applicable ?? 0} 张可用`,
+            small: `共 ${resetCredits.available ?? 0} 张`,
+          },
+          {
+            label: '数据来源',
+            value: (data.credentials && data.credentials.source) || '本机登录',
+            small: data.credentials && data.credentials.renewable
+              ? (data.credentials.autoRenewed ? '已自动续期' : '可自动续期')
+              : (data.fetchedAt ? `更新于 ${formatTime(data.fetchedAt)}` : ''),
+          },
+        ];
+        el.facts.innerHTML = facts
+          .map(
+            (f) => `
+            <div class="fact">
+              <dt>${f.label}</dt>
+              <dd>${escapeHtml(f.value)}${f.small ? ` <small>${escapeHtml(f.small)}</small>` : ''}</dd>
+            </div>`
+          )
+          .join('');
+      }
+
+      function renderModels() {
+        const data = state.data;
+        const models = data && data.models;
+        if (!models || models.length === 0) {
+          el.modelsBody.innerHTML = `<tr><td colspan="4"><div class="empty">没有读到模型目录</div></td></tr>`;
+          el.modelsNote.textContent = '';
+          return;
+        }
+        const visible = models.filter((m) => m.visibility !== 'hide');
+        el.modelsNote.textContent = `${models.length} 个，其中 ${visible.length} 个在模型选择器里显示`;
+
+        el.modelsBody.innerHTML = models
+          .map((m) => {
+            const levels = (m.reasoningLevels || [])
+              .map(
+                (lv) =>
+                  `<span class="level ${lv === m.defaultReasoningLevel ? 'is-default' : ''}">${
+                    LEVEL_LABEL[lv] || lv
+                  }</span>`
+              )
+              .join('');
+            const caps = [];
+            if (m.supportsSearch) caps.push('联网搜索');
+            (m.inputModalities || []).forEach((mod) => {
+              const label = MODALITY_LABEL[mod];
+              if (label) caps.push(`${label}输入`);
+            });
+            (m.serviceTiers || []).forEach((tier) => caps.push(tier));
+            const hidden = m.visibility === 'hide';
+            return `
+              <tr>
+                <td>
+                  <span class="model-name">${escapeHtml(m.displayName)}</span>
+                  <span class="model-slug mono">${escapeHtml(m.slug)}</span>
+                  ${m.description ? `<span class="model-desc">${escapeHtml(m.description)}</span>` : ''}
+                  ${hidden ? '<span class="tag-hidden">不在选择器显示</span>' : ''}
+                </td>
+                <td class="ctx-cell">
+                  <span class="ctx-main mono">${formatTokens(m.contextWindow)}</span>
+                  <span class="ctx-max mono">最大 ${formatTokens(m.maxContextWindow)}</span>
+                </td>
+                <td><div class="level-list">${levels || '<span class="tag-hidden">—</span>'}</div></td>
+                <td><div class="level-list">${
+                  caps.length
+                    ? caps.map((c) => `<span class="level">${escapeHtml(c)}</span>`).join('')
+                    : '<span class="tag-hidden">—</span>'
+                }</div></td>
+              </tr>`;
+          })
+          .join('');
+      }
+
+      function renderHistory() {
+        const data = state.data;
+        const history = data && data.history;
+        const days = (history && history.days) || [];
+        const withData = days.filter((d) => d.primary > 0 || d.secondary > 0);
+
+        el.historyNote.textContent = history
+          ? `已采样 ${history.totalSamples} 次 · 保留 ${history.retainedDays} 天${
+              history.lastSampleAt ? ` · 最近 ${formatTime(history.lastSampleAt)}` : ''
+            }`
+          : '';
+
+        if (withData.length === 0) {
+          el.chart.hidden = true;
+          el.legend.hidden = true;
+          el.chartEmpty.hidden = false;
+          return;
+        }
+
+        el.chartEmpty.hidden = true;
+        el.chart.hidden = false;
+        el.legend.hidden = false;
+
+        const shown = days.slice(-14);
+        const width = 640;
+        const height = 132;
+        const padLeft = 28;
+        const padBottom = 20;
+        const padTop = 8;
+        const plotW = width - padLeft - 8;
+        const plotH = height - padTop - padBottom;
+        const maxValue = Math.max(1, ...shown.map((d) => Math.max(d.primary, d.secondary)));
+        const slot = plotW / shown.length;
+        const barW = Math.max(2, Math.min(10, slot / 3));
+
+        const gridLines = [0, 0.5, 1]
+          .map((frac) => {
+            const y = padTop + plotH * (1 - frac);
+            const value = Math.round(maxValue * frac);
+            return `<line class="chart-grid" x1="${padLeft}" y1="${y}" x2="${width - 8}" y2="${y}" />
+                    <text class="chart-axis" x="${padLeft - 6}" y="${y + 3}" text-anchor="end">${value}%</text>`;
+          })
+          .join('');
+
+        const bars = shown
+          .map((d, i) => {
+            const cx = padLeft + slot * i + slot / 2;
+            const h1 = (d.primary / maxValue) * plotH;
+            const h2 = (d.secondary / maxValue) * plotH;
+            const y1 = padTop + plotH - h1;
+            const y2 = padTop + plotH - h2;
+            const label = `${d.date} 短周期 ${d.primary}% 每周 ${d.secondary}%`;
+            return `<rect class="chart-bar" x="${cx - barW - 1}" y="${y1}" width="${barW}" height="${Math.max(
+              0,
+              h1
+            )}" rx="2"><title>${label}</title></rect>
+            <rect class="chart-bar secondary" x="${cx + 1}" y="${y2}" width="${barW}" height="${Math.max(
+              0,
+              h2
+            )}" rx="2"><title>${label}</title></rect>`;
+          })
+          .join('');
+
+        const labels = shown
+          .map((d, i) => {
+            if (shown.length > 8 && i % 2 !== 0) return '';
+            const cx = padLeft + slot * i + slot / 2;
+            return `<text class="chart-axis" x="${cx}" y="${height - 4}" text-anchor="middle">${d.date.slice(5)}</text>`;
+          })
+          .join('');
+
+        el.chart.setAttribute('viewBox', `0 0 ${width} ${height}`);
+        el.chartGrid.innerHTML = gridLines;
+        el.chartBars.innerHTML = bars;
+        el.chartLabels.innerHTML = labels;
+      }
+
+      function renderSubtitle() {
+        const data = state.data;
+        if (!data || !data.ok || !data.quota) {
+          el.subtitle.textContent = '读取 ChatGPT 订阅额度与模型目录';
+          return;
+        }
+        const plan = PLAN_LABEL[data.quota.planType] || text(data.quota.planType);
+        const email = data.quota.email ? ` · ${maskEmail(data.quota.email)}` : '';
+        el.subtitle.textContent = `${plan} 订阅${email} · 更新于 ${formatTime(data.fetchedAt)}`;
+        el.quotaNote.textContent = data.cached ? '使用最近的缓存结果' : '';
+      }
+
+      function maskEmail(value) {
+        const at = value.indexOf('@');
+        if (at <= 1) return value;
+        return `${value.slice(0, 2)}***${value.slice(at)}`;
+      }
+
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, (ch) => {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+        });
+      }
+
+      function tickCountdowns() {
+        document.querySelectorAll('[data-role="countdown"]').forEach((node) => {
+          const resetAt = Number(node.getAttribute('data-reset-at'));
+          if (!resetAt) return;
+          node.textContent = formatCountdown(resetAt - Date.now());
+        });
+      }
+
+      async function load(force) {
+        if (state.loading) return;
+        state.loading = true;
+        el.refresh.disabled = true;
+        el.refresh.textContent = '读取中…';
+        try {
+          const response = await fetch(`/api/snapshot${force ? '?refresh=1' : ''}`, {
+            headers: { accept: 'application/json' },
+          });
+          if (!response.ok) throw new Error(`页面接口返回 ${response.status}`);
+          const data = await response.json();
+          state.data = data;
+          state.error = data.ok ? null : data.error || { message: '读取失败' };
+        } catch (error) {
+          state.error = { message: error && error.message ? error.message : '网络请求失败' };
+        } finally {
+          state.loading = false;
+          el.refresh.disabled = false;
+          el.refresh.textContent = '刷新';
+        }
+        renderNotices();
+        renderWindows();
+        renderFacts();
+        renderModels();
+        renderHistory();
+        renderSubtitle();
+        tickCountdowns();
+      }
+
+      el.refresh.addEventListener('click', () => load(true));
+
+      load(false);
+      state.timer = setInterval(() => {
+        tickCountdowns();
+        if (!document.hidden) load(false);
+      }, 60000);
+      setInterval(tickCountdowns, 1000);
+    </script>
+  </body>
+</html>

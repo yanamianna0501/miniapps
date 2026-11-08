@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "name": "model-usage-hub",
+  "displayName": "模型用量台",
+  "version": "1.0.4",
+  "description": "合并上下文用量、Codex 与 Google Antigravity 订阅配额，查询全部已配置模型的本机 Token、缓存与上下文统计，支持在卡片内一键启停本地反代服务（Google Pro / WorkBuddy），展示已验证的账户周额度、滚动额度与余额；不含会话明细。",
+  "author": "yanamianna0501",
+  "icon": "icon.png",
+  "category": "Other",
+  "exampleQueries": [
+    "打开模型用量台",
+    "启动或停止本地反代",
+    "查看 Google 周额度与 Codex 配额",
+    "查询全部模型的用量和剩余额度"
+  ],
+  "apps": [],
+  "mcpServers": [],
+  "skills": []
+}

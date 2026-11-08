@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>上下文仪表盘</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="page-head">
+        <div>
+          <h1>上下文仪表盘</h1>
+          <p class="page-desc">
+            读取本机 MiniMax Code 用量库，展示 token 构成、缓存命中率、上下文占用与构成、模型分布与活动分布，
+            并可下钻到单次模型调用。
+          </p>
+        </div>
+        <div class="page-head__actions">
+          <button type="button" class="btn" id="export">导出 CSV</button>
+          <button type="button" class="btn btn--primary" id="refresh">刷新数据</button>
+        </div>
+      </header>
+
+      <section class="toolbar" aria-label="视图筛选">
+        <div class="segmented" role="group" aria-label="时间范围">
+          <button type="button" class="segmented__item" data-range="7d" aria-pressed="true">7 天</button>
+          <button type="button" class="segmented__item" data-range="30d" aria-pressed="false">30 天</button>
+          <button type="button" class="segmented__item" data-range="all" aria-pressed="false">全部</button>
+        </div>
+        <label class="field">
+          <span class="field__label">排序</span>
+          <select class="select" id="sort">
+            <option value="recent">最近活跃</option>
+            <option value="billed">输入 + 输出</option>
+            <option value="context">当前上下文</option>
+            <option value="pressure">上下文占用率</option>
+            <option value="rate">缓存命中率</option>
+          </select>
+        </label>
+        <label class="field field--grow">
+          <span class="field__label">搜索</span>
+          <input class="input" id="search" type="search" placeholder="会话标题或工作区" autocomplete="off" />
+        </label>
+      </section>
+
+      <p class="notice" id="notice" role="status" aria-live="polite">正在读取用量库…</p>
+      <p class="notice notice--warn" id="degrade" role="status" hidden></p>
+      <p class="notice" id="export-note" role="status" hidden></p>
+
+      <section class="kpi-band" aria-labelledby="kpi-heading">
+        <h2 class="sr-only" id="kpi-heading">所选范围总览</h2>
+        <article class="kpi">
+          <p class="kpi__label">会话数</p>
+          <p class="kpi__value" id="kpi-sessions">—</p>
+          <p class="kpi__hint" id="kpi-sessions-hint">—</p>
+        </article>
+        <article class="kpi">
+          <p class="kpi__label">输入 + 输出</p>
+          <p class="kpi__value" id="kpi-billed">—</p>
+          <p class="kpi__hint" id="kpi-billed-hint">—</p>
+        </article>
+        <article class="kpi">
+          <p class="kpi__label">缓存读取</p>
+          <p class="kpi__value" id="kpi-cache-read">—</p>
+          <p class="kpi__hint" id="kpi-cache-read-hint">—</p>
+        </article>
+        <article class="kpi">
+          <p class="kpi__label">缓存命中率</p>
+          <p class="kpi__value" id="kpi-hit-rate">—</p>
+          <p class="kpi__hint" id="kpi-hit-rate-hint">—</p>
+        </article>
+      </section>
+      <p class="coverage" id="coverage"></p>
+
+      <section class="panel" aria-labelledby="daily-heading">
+        <div class="panel__head">
+          <h2 class="panel__title" id="daily-heading">每日用量</h2>
+          <p class="panel__meta" id="daily-meta"></p>
+        </div>
+        <div class="chart" id="daily-chart" role="img" aria-label="每日 token 用量堆叠柱状图"></div>
+        <ul class="legend">
+          <li class="legend__item"><span class="legend__swatch legend__swatch--cache"></span>缓存读取</li>
+          <li class="legend__item"><span class="legend__swatch legend__swatch--input"></span>未缓存输入</li>
+          <li class="legend__item"><span class="legend__swatch legend__swatch--output"></span>输出</li>
+          <li class="legend__item"><span class="legend__swatch legend__swatch--empty"></span>无调用</li>
+        </ul>
+        <details class="table-toggle">
+          <summary>展开每日数值表</summary>
+          <div class="table-wrap" id="daily-table"></div>
+        </details>
+      </section>
+
+      <section class="panel" aria-labelledby="pressure-heading">
+        <div class="panel__head">
+          <h2 class="panel__title" id="pressure-heading">上下文占用</h2>
+          <p class="panel__meta" id="pressure-meta"></p>
+        </div>
+        <div class="pressure-list" id="pressure-list"></div>
+        <p class="panel__note" id="pressure-note"></p>
+      </section>
+
+      <section class="panel" aria-labelledby="composition-heading">
+        <div class="panel__head">
+          <h2 class="panel__title" id="composition-heading">上下文构成</h2>
+          <div class="segmented" role="group" aria-label="构成范围" id="composition-scope">
+            <button type="button" class="segmented__item" data-scope="global" aria-pressed="true">各会话最新合计</button>
+            <button type="button" class="segmented__item" data-scope="session" aria-pressed="false">选中会话</button>
+          </div>
+        </div>
+        <p class="panel__meta" id="composition-meta"></p>
+        <div class="composition-bar" id="composition-bar" role="img" aria-label="上下文构成堆叠条"></div>
+        <ul class="legend" id="composition-legend"></ul>
+        <div class="table-wrap" id="composition-table"></div>
+        <p class="panel__note" id="composition-note"></p>
+      </section>
+
+      <section class="panel" aria-labelledby="models-heading">
+        <div class="panel__head">
+          <h2 class="panel__title" id="models-heading">模型统计</h2>
+          <p class="panel__meta" id="models-meta"></p>
+        </div>
+        <div class="table-wrap" id="models-table"></div>
+        <p class="panel__note" id="models-note"></p>
+      </section>
+
+      <section class="panel" aria-labelledby="heat-heading">
+        <div class="panel__head">
+          <h2 class="panel__title" id="heat-heading">活动热力图</h2>
+          <p class="panel__meta" id="heat-meta"></p>
+        </div>
+        <div class="heatmap-block">
+          <div class="heatmap-weekdays" aria-hidden="true">
+            <span></span><span>一</span><span></span><span>三</span><span></span><span>五</span><span></span>
+          </div>
+          <div class="heatmap" id="heatmap" role="img" aria-label="近 8 周每日 token 用量热力图"></div>
+        </div>
+        <ul class="legend" aria-label="热力等级图例，从 0 到高">
+          <li class="legend__item"><span class="legend__swatch legend__swatch--empty"></span>0</li>
+          <li class="legend__item"><span class="legend__swatch heatmap__cell--level-1"></span>低</li>
+          <li class="legend__item"><span class="legend__swatch heatmap__cell--level-2"></span>中</li>
+          <li class="legend__item"><span class="legend__swatch heatmap__cell--level-3"></span>中高</li>
+          <li class="legend__item"><span class="legend__swatch heatmap__cell--level-4"></span>高</li>
+        </ul>
+        <p class="panel__note" id="heat-note"></p>
+      </section>
+
+      <section class="panel" aria-labelledby="sessions-heading">
+        <div class="panel__head">
+          <h2 class="panel__title" id="sessions-heading">会话</h2>
+          <p class="panel__meta" id="sessions-meta"></p>
+        </div>
+        <div class="session-list" id="session-list"></div>
+        <p class="panel__note" id="sessions-note"></p>
+      </section>
+
+      <section class="panel" id="detail-panel" aria-labelledby="detail-heading" hidden>
+        <div class="panel__head">
+          <h2 class="panel__title" id="detail-heading">逐次调用</h2>
+          <button type="button" class="btn btn--ghost" id="detail-close">收起</button>
+        </div>
+        <p class="panel__meta" id="detail-meta"></p>
+        <div class="growth">
+          <div class="growth__head">
+            <h3 class="growth__title">上下文增长</h3>
+            <span class="growth__meta" id="detail-growth-meta"></span>
+          </div>
+          <div class="growth__chart" id="detail-growth" role="img" aria-label="该会话上下文占用随时间变化折线图"></div>
+        </div>
+        <div class="table-wrap" id="detail-table"></div>
+        <div class="pager" id="detail-pager"></div>
+      </section>
+    </main>
+
+    <dialog class="copy-dialog" id="copy-dialog">
+      <form method="dialog" class="copy-dialog__form">
+        <h2 class="copy-dialog__title">复制 CSV</h2>
+        <p class="copy-dialog__hint" id="copy-hint">
+          浏览器若未保存文件，可全选下方文本后复制，粘贴到任意表格工具即可。
+        </p>
+        <textarea class="copy-dialog__text" id="copy-text" readonly rows="12" spellcheck="false"></textarea>
+        <div class="copy-dialog__actions">
+          <button type="button" class="btn" id="copy-button">全选并复制</button>
+          <button type="submit" class="btn btn--primary">关闭</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="./app.js" type="module"></script>
+  </body>
+</html>

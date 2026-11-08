@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "name": "disk-space-board",
+  "displayName": "C 盘空间看板",
+  "version": "1.0.0",
+  "description": "按 T1–M3 分档查看 C 盘扫描清单，逐项记录清理 / 迁移 / 保留决策并汇总可释放空间。只记录决策，不删除或移动任何文件。",
+  "author": "yanamianna0501",
+  "icon": "icon.png",
+  "category": "Other",
+  "exampleQueries": ["打开 C 盘空间看板", "C 盘哪些缓存可以直接清掉", "帮我看一下未归类的空间都在哪"],
+  "apps": [],
+  "mcpServers": [],
+  "skills": []
+}
